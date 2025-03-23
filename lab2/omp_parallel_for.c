@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 #define N 5000
-#define EPSILON 1E-7
-#define TAU 1E-5
+#define EPSILON 0.00001 //1E-7
+#define TAU 0.001 //1E-5
 #define MAX_ITERATION_COUNT 1000000
 
 
