@@ -2,3 +2,4 @@ main
 omp_parallel_for
 omp_parallel
 omp_parallel_schedule
+.DS_Store
