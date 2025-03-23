@@ -13,3 +13,4 @@
     на мак: clang -fopenmp -o omp_parallel omp_parallel.c
     export OMP_NUM_THREADS=N
     ./omp_parallel
+

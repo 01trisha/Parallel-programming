@@ -5,7 +5,7 @@
 
 #define N 5000
 #define EPSILON 0.00001
-#define TAU 0.001
+#define TAU 0.01
 #define MAX_ITERATION_COUNT 10000000
 
 void CreateA(double* A, int size) {
@@ -48,7 +48,6 @@ void GetNextX(const double* Axb, double* x, double tau, int size) {
 }
 
 int main(int argc, char** argv) {
-
     int iterNum;
     double accuracy = EPSILON + 1;
     double normB;
@@ -58,7 +57,7 @@ int main(int argc, char** argv) {
     double* x = malloc(sizeof(double) * N);
     double* b = malloc(sizeof(double) * N);
     double* Axb = malloc(sizeof(double) * N);
-    
+
     CreateA(A, N);
     CreateX(x, N);
     CreateB(b, N);
@@ -80,7 +79,35 @@ int main(int argc, char** argv) {
         printf("Too many iterations\n");
     else {
         printf("Time: %lf sec\n", cpuTimeUsed);
+        printf("Iterations: %d\n", iterNum);
     }
+        // Вывод части матрицы A (первые 10x10 элементов)
+    printf("Matrix A (first 10x10 elements):\n");
+    for (int i = 0; i < 10; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            printf("%6.2lf ", A[i * N + j]);
+        }
+        printf("...\n"); // Чтобы показать, что матрица больше
+    }
+    printf("...\n\n");
+
+    // Вывод первых 10 элементов вектора B
+    printf("Vector B (first 10 values):\n");
+    for (int i = 0; i < 10; ++i) {
+        printf("B[%d] = %lf\n", i, b[i]);
+    }
+    printf("...\n\n");
+
+
+    // Вывод первых 10 элементов вектора x
+    printf("Solution vector (first 10 values):\n");
+    for (int i = 0; i < 10; ++i)
+        printf("x[%d] = %lf\n", i, x[i]);
+
+    // Вычисление и вывод нормы невязки ||Ax - b||
+    GetAxb(A, x, b, Axb, N);
+    double residualNorm = sqrt(GetNormSquare(Axb, N));
+    printf("Residual norm ||Ax - b|| = %e\n", residualNorm);
 
     free(A);
     free(x);
