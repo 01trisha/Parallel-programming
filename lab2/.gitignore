@@ -1,3 +1,4 @@
 main
 omp_parallel_for
 omp_parallel
+../.DS_Store
