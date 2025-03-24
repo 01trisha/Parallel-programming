@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define N 5000
+#define N 100
 #define EPSILON 0.00001
-#define TAU 0.001
+#define TAU 0.01
 #define MAX_ITERATION_COUNT 10000000
 
 void CreateA(double* A, int size) {
