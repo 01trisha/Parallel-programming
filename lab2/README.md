@@ -5,21 +5,21 @@
 ### main:
     gcc main.c -o main -lm
 ### omp_parallel_for.c:
-    на сервере: gcc -fopenmp omp_parallel_for.c -o omp_parallel_for -lm 
-    на мак: clang -fopenmp=libomp omp_parallel_for.c -o omp_parallel_for
+    gcc -fopenmp omp_parallel_for.c -o omp_parallel_for -lm #сервер
+    clang -fopenmp=libomp omp_parallel_for.c -o omp_parallel_for #мак
     export OMP_NUM_THREADS=N
     ./omp_parallel_for
 
 ### omp_parallel.c:
-    на сервере: gcc -fopenmp -o omp_parallel omp_parallel.c -lm
-    на мак: clang -fopenmp -o omp_parallel omp_parallel.c
+    gcc -fopenmp -o omp_parallel omp_parallel.c -lm #сервер
+    clang -fopenmp -o omp_parallel omp_parallel.c #мак
     export OMP_NUM_THREADS=N
     ./omp_parallel
 
 ### omp_parallel_schedule.c:
     chmod +x run_schedule.sh
-    на сервере: gcc -fopenmp -o omp_parallel_schedule omp_parallel_schedule.c -lm
-    на мак: clang -fopenmp -o omp_parallel_schedule omp_parallel_schedule.c  
+    gcc -fopenmp -o omp_parallel_schedule omp_parallel_schedule.c -lm #сервер
+    clang -fopenmp -o omp_parallel_schedule omp_parallel_schedule.c #мак
     ./run_schedule.sh
 
 
@@ -136,7 +136,7 @@ thread_num(), каждый поток получает собственное з
 у dynamic есть планировщик который выдает задачи потоку и может произойти ситуация когда в порядке очереди будут выдаваться задачи , пока выдается, второй может простаивать и из за этого простой по времени
 допустим 2 потока по 4 итерации, 1 поток отработал, смотрит какие итерации свободны и берет их 
 а у статика во время работы уже вся работа распределена на каждый поток
-
+guided позволяет сначала быстро распределить большую часть работы, а затем более точно балансировать оставшиеся итерации.
 reduction создает копию на каждый поток и независимо потоки кладут сумму свою а потом после цикла они все суммируются и кладут в указанную переменную
 
 shared - потоки могут совместно к ней обращаться
@@ -152,3 +152,15 @@ private - аждый поток получает свою локальную к�
 
 Ускорение: Sp = T1 / Tp, где T1 - время работы последовательной программы, а Tp - время работы параллельной на p процессах.
 Эффективность: Ep = Sp / p * 100%
+
+
+#pragma omp parallel for schedule(static)
+for (int i = 0; i < 1000; i++) {
+    A[i] = B[i] + C[i];
+}
+
+#pragma omp parallel for schedule(dynamic)
+for (int i = 0; i < 1000; i++) {
+    A[i] = sqrt(B[i]) * log(C[i]);
+}
+

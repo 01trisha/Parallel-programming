@@ -5,7 +5,7 @@
 
 #define N 100
 #define EPSILON 0.00001
-#define TAU 0.01
+#define TAU 0.00001
 #define MAX_ITERATION_COUNT 10000000
 
 void CreateA(double* A, int size) {

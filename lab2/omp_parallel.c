@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define N 5000
+#define N 100
 #define EPSILON 0.00001
-#define TAU 0.001
+#define TAU 0.000001
 #define MAX_ITERATION_COUNT 10000000
 
 //делим матрицу на части между потоками (кол-во обрабатываемых строк, с какой строки начинать потоку)
@@ -129,6 +129,26 @@ int main(int argc, char** argv)
     }
 
     finishTime = omp_get_wtime();
+
+    printf("Матрица A:\n");
+    for (int i = 0; i < 10; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            printf("%6.2lf ", A[i * N + j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+
+    printf("Вектор B:\n");
+    for (int i = 0; i < 10; ++i) {
+        printf("B[%d] = %lf\n", i, b[i]);
+    }
+    printf("\n");
+
+    printf("Вектор X:\n");
+    for (int i = 0; i < 10; ++i)
+        printf("x[%d] = %lf\n", i, x[i]);
+
 
     if (iterNum == MAX_ITERATION_COUNT)
         printf("Too many iterations\n");

@@ -88,6 +88,26 @@ int main(int argc, char** argv)
 
     finishTime = omp_get_wtime();
 
+    // printf("Матрица A:\n");
+    // for (int i = 0; i < 10; ++i) {
+    //     for (int j = 0; j < 10; ++j) {
+    //         printf("%6.2lf ", A[i * N + j]);
+    //     }
+    //     printf("\n");
+    // }
+    // printf("\n");
+
+    // printf("Вектор B:\n");
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("B[%d] = %lf\n", i, b[i]);
+    // }
+    // printf("\n");
+
+    // printf("Вектор X:\n");
+    // for (int i = 0; i < 10; ++i)
+    //     printf("x[%d] = %lf\n", i, x[i]);
+
+
     if (iterNum == MAX_ITERATION_COUNT)
         printf("Too many iterations\n");
     else
