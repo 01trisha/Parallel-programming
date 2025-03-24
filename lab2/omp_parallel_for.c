@@ -38,7 +38,7 @@ void CreateB(double* b, int size)
 double GetNormSquare(const double* vector, int size)
 {
     double normSquare = 0.0;
-
+//защита от состояния гонки - когда потоки обращаются к одному и тому же элементу без синхронизации
 #pragma omp parallel for reduction(+ : normSquare)
     for (int i = 0; i < size; ++i)
         normSquare += vector[i] * vector[i];

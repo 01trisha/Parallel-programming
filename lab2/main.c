@@ -27,6 +27,7 @@ void CreateB(double* b, int size) {
         b[i] = N + 1;
 }
 
+//норма вектора 
 double GetNormSquare(const double* vector, int size) {
     double normSquare = 0.0;
     for (int i = 0; i < size; ++i)
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
 
     startTime = clock();
 
+    //останавливаемся если достигнута точность или превышено число итераций
     for (iterNum = 0; accuracy > EPSILON && iterNum < MAX_ITERATION_COUNT; ++iterNum) {
         GetAxb(A, x, b, Axb, N);
         GetNextX(Axb, x, TAU, N);

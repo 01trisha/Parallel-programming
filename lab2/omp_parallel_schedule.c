@@ -32,7 +32,6 @@ void CreateB(double* b, int size)
         b[i] = N + 1;
 }
 double GetNormSquare(const double* vector, int size)
-
 {
     double normSquare = 0.0;
 
