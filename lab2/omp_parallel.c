@@ -113,17 +113,16 @@ int main(int argc, char** argv)
 //заставляем ждать потоки друг друга чтоб все потоки завершили считать до обновления x
 #pragma omp barrier
 
-            GetNextX(Axb + lineOffsets[stringId], x + lineOffsets[stringId],
-                TAU, lineNum[stringId]);
-//чтоб только один поток сделал финальный расчет accuracy(не все обнуляли)
+            GetNextX(Axb + lineOffsets[stringId], x + lineOffsets[stringId], TAU, lineNum[stringId]);
+//чарантирует, что блок кода внутри нее будет выполнен только одним потоком, а остальные потоки будут ждать его завершения 
 #pragma omp single
             accuracy = 0;
-//гарантируем атомарное сложение 
+//гарантируем атомарное сложение(без вмещательства других потоков) 
 #pragma omp atomic
             accuracy += GetNormSquare(Axb + lineOffsets[stringId], lineNum[stringId]);
 //заставляем потоки ждать друг друга чтоб все потоки завершили считать до обновления accuracy
 #pragma omp barrier
-//только один поток посчитал финальный accuracy
+//арантирует, что блок кода внутри нее будет выполнен только одним потоком, а остальные потоки будут ждать его завершения 
 #pragma omp single
             accuracy = sqrt(accuracy) / normB;
         }
