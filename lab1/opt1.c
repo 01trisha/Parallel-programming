@@ -129,30 +129,31 @@ int main(int argc, char **argv)
         }else{
             printf("Norm: %lf\n", sqrt(calc_norm_square(x, N)));
             printf("Time: %lf sec\n", finish_time - start_time);
+            printf("Iteration count: %d\n", iter_count);
+
+            printf("Матрица A:\n");
+            for (int i = 0; i < 10; ++i){
+                for (int j = 0; j < 10; ++j) {
+                    printf("%6.2lf ", A_chunk[i * N + j]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+          
+            printf("Вектор B:\n");
+            for (int i = 0; i < 10; ++i){
+                printf("B[%d] = %lf\n", i, b[i]);
+            }
+            printf("\n");
+          
+            printf("Вектор X:\n");
+            for (int i = 0; i < 10; ++i){
+                printf("x[%d] = %lf\n", i, x[i]);
+            }
+           
         }
     }
 
-    printf("Iteration count: %d\n", iter_count);
-
-    printf("Матрица A:\n");
-    for (int i = 0; i < 10; ++i){
-        for (int j = 0; j < 10; ++j){
-            printf("%6.2lf ", A[i * N + j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-  
-    printf("Вектор B:\n");
-    for (int i = 0; i < 10; ++i){
-        printf("B[%d] = %lf\n", i, b[i]);
-    }
-    printf("\n");
-  
-    printf("Вектор X:\n");
-    for (int i = 0; i < 10; ++i){
-        printf("x[%d] = %lf\n", i, x[i]);
-    }
 
     free(line_counts);
     free(line_offsets);
