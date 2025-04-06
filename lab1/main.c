@@ -91,25 +91,25 @@ int main() {
 
   printf("Iteration count: %d\n", iter_count);
 
-  printf("Матрица A:\n");
-  for (int i = 0; i < 10; ++i){
-      for (int j = 0; j < 10; ++j) {
-          printf("%6.2lf ", A[i * N + j]);
-      }
-      printf("\n");
-  }
-  printf("\n");
+  // printf("Матрица A:\n");
+  // for (int i = 0; i < 10; ++i){
+  //     for (int j = 0; j < 10; ++j) {
+  //         printf("%6.2lf ", A[i * N + j]);
+  //     }
+  //     printf("\n");
+  // }
+  // printf("\n");
 
-  printf("Вектор B:\n");
-  for (int i = 0; i < 10; ++i){
-      printf("B[%d] = %lf\n", i, b[i]);
-  }
-  printf("\n");
+  // printf("Вектор B:\n");
+  // for (int i = 0; i < 10; ++i){
+  //     printf("B[%d] = %lf\n", i, b[i]);
+  // }
+  // printf("\n");
 
-  printf("Вектор X:\n");
-  for (int i = 0; i < 10; ++i){
-      printf("x[%d] = %lf\n", i, x[i]);
-  }
+  // printf("Вектор X:\n");
+  // for (int i = 0; i < 10; ++i){
+  //     printf("x[%d] = %lf\n", i, x[i]);
+  // }
 
   printf("\nNorm: %lf\n", sqrt(calc_norm_square(x)));
   printf("Time: %lf sec\n", cpu_time_used);
