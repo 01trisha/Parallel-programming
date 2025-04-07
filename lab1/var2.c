@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define N 10000
-#define EPSILON 0.0000001 
+#define N 5000
+#define EPSILON 0.000001
 #define TAU 0.00001
 #define MAX_ITERATION_COUNT 100000
 
@@ -52,6 +52,12 @@ double calc_norm_square(double* vector, int size){
 }
 
 
+void copy_vector(double* dest, const double* src, int size){
+    for (int i = 0; i < size; ++i){
+        dest[i] = src[i];
+    }
+}
+
 void calc_Axb(const double* A_chunk, const double* x_chunk, const double* b_chunk, double* replace_x_chunk, double* Axb_chunk, int* line_counts, int* line_offsets, int process_rank, int process_count){
     int src_rank = (process_rank + process_count - 1) % process_count;
     int dest_rank = (process_rank + 1) % process_count;
@@ -73,6 +79,12 @@ void calc_Axb(const double* A_chunk, const double* x_chunk, const double* b_chun
         if (i != process_count - 1){
             MPI_Sendrecv_replace(replace_x_chunk, line_counts[0], MPI_DOUBLE, dest_rank, process_rank, src_rank, src_rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
+    }
+}
+
+void calc_next_x(const double* Axb_chunk, double* x_chunk, double tau, int size){
+    for (int i = 0; i < size; ++i){
+        x_chunk[i] = x_chunk[i] - tau * Axb_chunk[i];
     }
 }
 
