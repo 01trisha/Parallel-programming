@@ -59,12 +59,15 @@ void copy_vector(double* dest, const double* src, int size){
 }
 
 void calc_Axb(const double* A_chunk, const double* x_chunk, const double* b_chunk, double* replace_x_chunk, double* Axb_chunk, int* line_counts, int* line_offsets, int process_rank, int process_count){
+    //отправитель
     int src_rank = (process_rank + process_count - 1) % process_count;
+    //получатель
     int dest_rank = (process_rank + 1) % process_count;
     int current_rank;
 
     copy_vector(replace_x_chunk, x_chunk, line_counts[process_rank]);
 
+    //обрабатываем один кусок вектора x из какого то процесса 
     for (int i = 0; i < process_count; ++i){
         current_rank = (process_rank + i) % process_count;
         for (int j = 0; j < line_counts[process_rank]; ++j){
@@ -75,8 +78,9 @@ void calc_Axb(const double* A_chunk, const double* x_chunk, const double* b_chun
                 Axb_chunk[j] += A_chunk[j * N + line_offsets[current_rank] + k] * replace_x_chunk[k];
             }
         }
-
+        //передаем x по кольцу
         if (i != process_count - 1){
+            //отправляем буфер в другой процесс и получаем данные от другого процесса
             MPI_Sendrecv_replace(replace_x_chunk, line_counts[0], MPI_DOUBLE, dest_rank, process_rank, src_rank, src_rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
     }

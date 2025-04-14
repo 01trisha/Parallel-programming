@@ -85,7 +85,9 @@ int main(int argc, char **argv)
 
     MPI_Init(&argc, &argv);
 
+    //общее число процессов
     MPI_Comm_size(MPI_COMM_WORLD, &process_count);
+    //номер текущего процесса
     MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
 
     line_counts =(int*)malloc(sizeof(int) * process_count);
@@ -112,13 +114,17 @@ int main(int argc, char **argv)
         calc_Axb(A_chunk, x, b, Axb_chunk, line_counts[process_rank], line_offsets[process_rank]);
 
         calc_next_x(Axb_chunk, x, x_chunk, TAU, line_counts[process_rank], line_offsets[process_rank]);
+        //каждый процесс отдает кусок данных, собираем x 
         MPI_Allgatherv(x_chunk, line_counts[process_rank], MPI_DOUBLE, x, line_counts, line_offsets, MPI_DOUBLE, MPI_COMM_WORLD);
 
         double Axb_chunk_norm_square = calc_norm_square(Axb_chunk, line_counts[process_rank]);
+
+        //суммируем точность
         MPI_Reduce(&Axb_chunk_norm_square, &accuracy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
         if (process_rank == 0){
             accuracy = sqrt(accuracy) / b_norm;
         }
+        //отправляем точность всем процессам
         MPI_Bcast(&accuracy, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
