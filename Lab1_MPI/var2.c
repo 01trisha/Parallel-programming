@@ -58,6 +58,7 @@ void copy_vector(double* dest, const double* src, int size){
     }
 }
 
+//для вычисления Ax каждый процесс должен умножить свою часть матрицы на весь вектор x
 void calc_Axb(const double* A_chunk, const double* x_chunk, const double* b_chunk, double* replace_x_chunk, double* Axb_chunk, int* line_counts, int* line_offsets, int process_rank, int process_count){
     //отправитель
     int src_rank = (process_rank + process_count - 1) % process_count;
@@ -65,6 +66,7 @@ void calc_Axb(const double* A_chunk, const double* x_chunk, const double* b_chun
     int dest_rank = (process_rank + 1) % process_count;
     int current_rank;
 
+    //каждый процесс копирует свою часть вектора в буффер
     copy_vector(replace_x_chunk, x_chunk, line_counts[process_rank]);
 
     //обрабатываем один кусок вектора x из какого то процесса 
