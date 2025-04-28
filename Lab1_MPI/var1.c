@@ -4,7 +4,7 @@
 #include <time.h>
 #include <mpi.h>
 
-#define N 5000
+#define N 5000 
 #define EPSILON 0.000001
 #define TAU 0.00001
 #define MAX_ITERATION_COUNT 100000
