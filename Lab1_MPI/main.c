@@ -8,9 +8,9 @@
 #define TAU 0.00001
 #define MAX_ITERATION_COUNT 100000
 
-void generate_A(double *A){
-  for (int i = 0; i < N; i++){
-    for (int j = 0; j < N; ++j){
+void generate_A(double *A) {
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; ++j) {
       A[i * N + j] = 1;
     }
 
@@ -18,43 +18,42 @@ void generate_A(double *A){
   }
 }
 
-void generate_x(double *x){
-  for (int i = 0; i < N; i++){
+void generate_x(double *x) {
+  for (int i = 0; i < N; i++) {
     x[i] = 0;
   }
 }
 
-void generate_b(double *b){
-  for (int i = 0; i < N; i++){
+void generate_b(double *b) {
+  for (int i = 0; i < N; i++) {
     b[i] = N + 1;
   }
 }
 
-double calc_norm_square(const double *vector){
+double calc_norm_square(const double *vector) {
   double norm_square = 0.0;
-  for (int i = 0; i < N; ++i){
+  for (int i = 0; i < N; ++i) {
     norm_square += vector[i] * vector[i];
   }
   return norm_square;
 }
 
-void calc_Axb(const double *A, const double *x, const double *b, double *Axb){
-  for (int i = 0; i < N; ++i){
+void calc_Axb(const double *A, const double *x, const double *b, double *Axb) {
+  for (int i = 0; i < N; ++i) {
     Axb[i] = -b[i];
-    for (int j = 0; j < N; ++j){
+    for (int j = 0; j < N; ++j) {
       Axb[i] += A[i * N + j] * x[j];
     }
   }
 }
 
-void calc_next_x(const double *Axb, const double *x, double *next_x){
-  for (int i = 0; i < N; ++i){
+void calc_next_x(const double *Axb, const double *x, double *next_x) {
+  for (int i = 0; i < N; ++i) {
     next_x[i] = x[i] - TAU * Axb[i];
   }
 }
 
-
-int main(){
+int main() {
   clock_t start_time, end_time;
   double cpu_time_used;
 
@@ -81,11 +80,12 @@ int main(){
   start_time = clock();
 
   int iter_count;
-  for (iter_count = 0; accuracy > EPSILON && iter_count < MAX_ITERATION_COUNT; ++iter_count){
+  for (iter_count = 0; accuracy > EPSILON && iter_count < MAX_ITERATION_COUNT;
+       ++iter_count) {
     calc_Axb(A, x, b, Axb);
     calc_next_x(Axb, x, next_x);
 
-    for (int i = 0; i < N; ++i){
+    for (int i = 0; i < N; ++i) {
       x[i] = next_x[i];
     }
 
@@ -128,4 +128,3 @@ int main(){
 
   return 0;
 }
-
