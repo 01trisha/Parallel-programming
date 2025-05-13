@@ -3,4 +3,4 @@
 # Лабораторные работы на C:
 - **[Lab1 - MPI](https://github.com/01trisha/Parallel-programming/tree/master/Lab1_MPI)**
 - **[Lab2 - OpenMP](https://github.com/01trisha/Parallel-programming/tree/master/Lab1_MPI)**
-- 
+- **[Lab3 - 2D Grid](https://github.com/01trisha/Parallel-programming/tree/master/Lab3_2D_Grid)** 
