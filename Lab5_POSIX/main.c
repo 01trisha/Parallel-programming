@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #define AMOUNT_OF_LISTS 5
-#define WEIGHT_COEFFICIENT 5000
+#define WEIGHT_COEFFICIENT 2000
 
 #define MIN_AMOUNT_OF_TASKS_TO_SHARE 20
 #define TASKS_PER_PROCESS 2400
@@ -39,19 +39,18 @@ void initTasksWeight() {
 
 void calculateTask() {
   pthread_mutex_lock(&mutexTasksInRemain);
-
-  for (int i = 0; tasksInRemain; ++i, tasksInRemain--) {
+  while (tasksInRemain > 0) {
+    int current_task = --tasksInRemain;
     pthread_mutex_unlock(&mutexTasksInRemain);
 
     pthread_mutex_lock(&mutexTasks);
-    int task_weight = tasks[i];
+    int task_weight = tasks[current_task];
     pthread_mutex_unlock(&mutexTasks);
 
     for (int j = 0; j < task_weight; ++j) {
       RES_PER_ITERATION += sin(j);
     }
-
-    ++amountOfTasksAlreadyExecuted;
+    amountOfTasksAlreadyExecuted++;
 
     pthread_mutex_lock(&mutexTasksInRemain);
   }
