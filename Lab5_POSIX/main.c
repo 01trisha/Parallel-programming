@@ -1,0 +1,236 @@
+#include <math.h>
+#include <mpi.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define AMOUNT_OF_LISTS 5
+#define WEIGHT_COEFFICIENT 5000
+
+#define MIN_AMOUNT_OF_TASKS_TO_SHARE 20
+#define TASKS_PER_PROCESS 2400
+
+#define TAG_REQUEST 0
+#define TAG_REPLY 1
+
+double RES_PER_ITERATION = 0;
+double GLOBAL_RESULT_SIN = 0;
+
+int rankProc, countProc;
+
+int *tasks;
+int tasksInRemain;
+int amountOfTasksAlreadyExecuted;
+
+pthread_mutex_t mutexTasks;
+pthread_mutex_t mutexTasksInRemain;
+
+pthread_t recvThread;
+
+void initTasksWeight() {
+  pthread_mutex_lock(&mutexTasks);
+  for (int i = 0; i < TASKS_PER_PROCESS; ++i) {
+    tasks[i] = abs(50 - i % 100) *
+               abs(rankProc - (TASKS_PER_PROCESS % countProc)) *
+               WEIGHT_COEFFICIENT;
+  }
+  pthread_mutex_unlock(&mutexTasks);
+}
+
+void calculateTask() {
+  pthread_mutex_lock(&mutexTasksInRemain);
+
+  for (int i = 0; tasksInRemain; ++i, tasksInRemain--) {
+    pthread_mutex_unlock(&mutexTasksInRemain);
+
+    pthread_mutex_lock(&mutexTasks);
+    int task_weight = tasks[i];
+    pthread_mutex_unlock(&mutexTasks);
+
+    for (int j = 0; j < task_weight; ++j) {
+      RES_PER_ITERATION += sin(j);
+    }
+
+    ++amountOfTasksAlreadyExecuted;
+
+    pthread_mutex_lock(&mutexTasksInRemain);
+  }
+  pthread_mutex_unlock(&mutexTasksInRemain);
+}
+
+void *receiverThreadGo(void *args) {
+  int tasksToSend;
+  int rankRequestedTasks;
+
+  while (1) {
+
+    // Получение запроса на задачи от любого процесса
+    MPI_Recv(&rankRequestedTasks, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST,
+             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    if (rankRequestedTasks == rankProc)
+      break;
+
+    pthread_mutex_lock(&mutexTasksInRemain);
+    if (tasksInRemain >= MIN_AMOUNT_OF_TASKS_TO_SHARE) {
+      tasksToSend = tasksInRemain / 2;
+      tasksInRemain -= tasksToSend;
+
+      MPI_Send(&tasksToSend, 1, MPI_INT, rankRequestedTasks, TAG_REPLY,
+               MPI_COMM_WORLD);
+
+      pthread_mutex_lock(&mutexTasks);
+      MPI_Send(tasks + amountOfTasksAlreadyExecuted + tasksInRemain - 1,
+               tasksToSend, MPI_INT, rankRequestedTasks, TAG_REPLY,
+               MPI_COMM_WORLD);
+      pthread_mutex_unlock(&mutexTasksInRemain);
+      pthread_mutex_unlock(&mutexTasks);
+    } else {
+      tasksToSend = 0;
+      MPI_Send(&tasksToSend, 1, MPI_INT, rankRequestedTasks, TAG_REPLY,
+               MPI_COMM_WORLD);
+    }
+    pthread_mutex_unlock(&mutexTasksInRemain);
+  }
+  return NULL;
+}
+
+void *workerThreadGo(void *args) {
+  tasks = (int *)malloc(TASKS_PER_PROCESS * sizeof(int));
+
+  double startTime;
+  double minTime, maxTime;
+
+  for (int iterCounter = 0; iterCounter < AMOUNT_OF_LISTS; ++iterCounter) {
+    initTasksWeight();
+
+    pthread_mutex_lock(&mutexTasksInRemain);
+    tasksInRemain = TASKS_PER_PROCESS;
+    pthread_mutex_unlock(&mutexTasksInRemain);
+    amountOfTasksAlreadyExecuted = 0;
+    int amountOfAdditionalTasks;
+
+    startTime = MPI_Wtime();
+
+    // Выполнение задач из своего списка
+    calculateTask();
+
+    // Запрос задач у других процессов, если свои задачи выполнены
+    for (int currentProc = 0; currentProc < countProc; ++currentProc) {
+      if (currentProc == rankProc)
+        continue;
+
+      MPI_Send(&rankProc, 1, MPI_INT, currentProc, TAG_REQUEST, MPI_COMM_WORLD);
+      MPI_Recv(&amountOfAdditionalTasks, 1, MPI_INT, currentProc, TAG_REPLY,
+               MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      if (amountOfAdditionalTasks > 0) {
+        MPI_Recv(tasks, amountOfAdditionalTasks, MPI_INT, currentProc,
+                 TAG_REPLY, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        pthread_mutex_lock(&mutexTasksInRemain);
+        tasksInRemain = amountOfAdditionalTasks;
+        pthread_mutex_unlock(&mutexTasksInRemain);
+
+        // Дополнительное выполнение задач, полученных от других процессов
+        calculateTask();
+      }
+    }
+
+    double endt = MPI_Wtime();
+    double resTime = endt - startTime;
+
+    MPI_Allreduce(&resTime, &minTime, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(&resTime, &maxTime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+    if (rankProc == 0) {
+      printf("=================================================\n");
+      printf("Iteration number: %d\n", iterCounter);
+      printf("Disbalance time: %f\n", maxTime - minTime);
+      printf("Disbalance percentage: %f\n",
+             (maxTime - minTime) / maxTime * 100);
+      printf("----------------------------------------------\n");
+    }
+
+    for (int currentProc = 0; currentProc < countProc; ++currentProc) {
+      if (rankProc == currentProc) {
+        printf("\t\tCurrent proc is: %d\n", rankProc);
+        printf("Amount of executed tasks: %d\n", amountOfTasksAlreadyExecuted);
+        printf("Result of calculating is: %f\n", RES_PER_ITERATION);
+        printf("Time per iteration: %f seconds\n", resTime);
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+  }
+
+  MPI_Send(&rankProc, 1, MPI_INT, rankProc, 0, MPI_COMM_WORLD);
+
+  MPI_Allreduce(&RES_PER_ITERATION, &GLOBAL_RESULT_SIN, 1, MPI_DOUBLE, MPI_SUM,
+                MPI_COMM_WORLD);
+
+  free(tasks);
+
+  return NULL;
+}
+
+void createAndGoThreads() {
+  pthread_mutex_init(&mutexTasks, NULL);
+  pthread_mutex_init(&mutexTasksInRemain, NULL);
+
+  pthread_attr_t attributes;
+  if (pthread_attr_init(&attributes) != 0) {
+    MPI_Finalize();
+    perror("Can't init attributes");
+    abort();
+  }
+
+  // Установим состояние отсоединения потока
+  if (pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_JOINABLE) != 0) {
+    MPI_Finalize();
+    perror("Error in setting attributes");
+    abort();
+  }
+
+  if (pthread_create(&recvThread, &attributes, receiverThreadGo, NULL) != 0) {
+    MPI_Finalize();
+    perror("Can't create thread");
+    abort();
+  }
+
+  pthread_attr_destroy(&attributes);
+
+  workerThreadGo(NULL); // В основном потоке
+  pthread_join(recvThread, NULL);
+
+  pthread_mutex_destroy(&mutexTasks);
+  pthread_mutex_destroy(&mutexTasksInRemain);
+}
+
+int main(int argc, char **argv) {
+  int reqiredLevel =
+      MPI_THREAD_MULTIPLE; // Мы хотим этот уровень поддержки многопоточности
+  int providedLevel; // Фактический уровень поддержки многопоточности
+
+  MPI_Init_thread(&argc, &argv, reqiredLevel, &providedLevel);
+  if (providedLevel != reqiredLevel) {
+    MPI_Finalize();
+    perror("Can't load required level");
+    return 0;
+  }
+
+  MPI_Comm_size(MPI_COMM_WORLD, &countProc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rankProc);
+
+  double startTime = MPI_Wtime();
+  createAndGoThreads();
+  double endTime = MPI_Wtime();
+
+  double resTime = endTime - startTime;
+
+  if (rankProc == 0) {
+    printf("=======================================\n");
+    printf("Time for all lists: %f seconds\n", resTime);
+  }
+
+  MPI_Finalize();
+  return 0;
+}
