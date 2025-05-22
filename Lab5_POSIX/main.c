@@ -126,9 +126,10 @@ void *workerThreadGo(void *args) {
       MPI_Recv(&amountOfAdditionalTasks, 1, MPI_INT, currentProc, TAG_REPLY,
                MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       if (amountOfAdditionalTasks > 0) {
+        pthread_mutex_lock(&mutexTasks);
         MPI_Recv(tasks, amountOfAdditionalTasks, MPI_INT, currentProc,
                  TAG_REPLY, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
+        pthread_mutex_unlock(&mutexTasks);
         pthread_mutex_lock(&mutexTasksInRemain);
         tasksInRemain = amountOfAdditionalTasks;
         pthread_mutex_unlock(&mutexTasksInRemain);

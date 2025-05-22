@@ -193,6 +193,20 @@ Time per iteration: 13.753658 seconds
 Time for all lists: 69.991226 seconds
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mpirun -np 8 ./main_test
 =================================================
 Iteration number: 0
