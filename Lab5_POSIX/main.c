@@ -38,27 +38,27 @@ void initTasksWeight() {
 }
 
 void calculateTask() {
-    double local_res = 0;
+  double local_res = 0;
 
-    pthread_mutex_lock(&mutexTasksInRemain);
-    while (tasksInRemain > 0) {
-        int current_task = --tasksInRemain;
-        pthread_mutex_unlock(&mutexTasksInRemain);
+  pthread_mutex_lock(&mutexTasksInRemain);
+  while (tasksInRemain > 0) {
+    int current_task = --tasksInRemain;
+    pthread_mutex_unlock(&mutexTasksInRemain);
 
-        pthread_mutex_lock(&mutexTasks);
-        int task_weight = tasks[current_task];
-        pthread_mutex_unlock(&mutexTasks);
+    pthread_mutex_lock(&mutexTasks);
+    int task_weight = tasks[current_task];
+    pthread_mutex_unlock(&mutexTasks);
 
-        for (int j = 0; j < task_weight; ++j) {
-            local_res += sin(j);
-        }
-
-        pthread_mutex_lock(&mutexTasksInRemain);
-        amountOfTasksAlreadyExecuted++;
+    for (int j = 0; j < task_weight; ++j) {
+      local_res += sin(j);
     }
 
-    RES_PER_ITERATION += local_res;
-    pthread_mutex_unlock(&mutexTasksInRemain);
+    pthread_mutex_lock(&mutexTasksInRemain);
+    amountOfTasksAlreadyExecuted++;
+  }
+
+  RES_PER_ITERATION += local_res;
+  pthread_mutex_unlock(&mutexTasksInRemain);
 }
 void *receiverThreadGo(void *args) {
   int tasksToSend;
@@ -66,7 +66,7 @@ void *receiverThreadGo(void *args) {
 
   while (1) {
 
-    // Получение запроса на задачи от любого процесса
+    // получение запроса на задачи от любого процесса
     MPI_Recv(&rankRequestedTasks, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST,
              MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -114,10 +114,10 @@ void *workerThreadGo(void *args) {
 
     startTime = MPI_Wtime();
 
-    // Выполнение задач из своего списка
+    // выполнение задач из своего списка
     calculateTask();
 
-    // Запрос задач у других процессов, если свои задачи выполнены
+    // запрос задач у других процессов, если свои задачи выполнены
     for (int currentProc = 0; currentProc < countProc; ++currentProc) {
       if (currentProc == rankProc)
         continue;
@@ -133,7 +133,7 @@ void *workerThreadGo(void *args) {
         tasksInRemain = amountOfAdditionalTasks;
         pthread_mutex_unlock(&mutexTasksInRemain);
 
-        // Дополнительное выполнение задач, полученных от других процессов
+        // дополнительное выполнение задач, полученых от других процессоы
         calculateTask();
       }
     }
@@ -185,7 +185,6 @@ void createAndGoThreads() {
     abort();
   }
 
-  // Установим состояние отсоединения потока
   if (pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_JOINABLE) != 0) {
     MPI_Finalize();
     perror("Error in setting attributes");
@@ -200,7 +199,7 @@ void createAndGoThreads() {
 
   pthread_attr_destroy(&attributes);
 
-  workerThreadGo(NULL); // В основном потоке
+  workerThreadGo(NULL); // в основном потоке
   pthread_join(recvThread, NULL);
 
   pthread_mutex_destroy(&mutexTasks);
@@ -209,8 +208,8 @@ void createAndGoThreads() {
 
 int main(int argc, char **argv) {
   int reqiredLevel =
-      MPI_THREAD_MULTIPLE; // Мы хотим этот уровень поддержки многопоточности
-  int providedLevel; // Фактический уровень поддержки многопоточности
+      MPI_THREAD_MULTIPLE; // хотим этот уровень поддержки многопоточности
+  int providedLevel; // фактический уровень поддержки многопоточности
 
   MPI_Init_thread(&argc, &argv, reqiredLevel, &providedLevel);
   if (providedLevel != reqiredLevel) {
