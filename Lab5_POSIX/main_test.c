@@ -27,6 +27,8 @@ pthread_mutex_t mutexTasksInRemain;
 
 pthread_t recvThread;
 
+double activeTime = 0;
+
 void initTasksWeight() {
   pthread_mutex_lock(&mutexTasks);
   for (int i = 0; i < TASKS_PER_PROCESS; ++i) {
@@ -49,9 +51,12 @@ void calculateTask() {
         int task_weight = tasks[current_task];
         pthread_mutex_unlock(&mutexTasks);
 
+        double startActive = MPI_Wtime();
         for (int j = 0; j < task_weight; ++j) {
             local_res += sin(j);
         }
+        double endActive = MPI_Wtime();
+        activeTime += (endActive - startActive);
 
         pthread_mutex_lock(&mutexTasksInRemain);
         amountOfTasksAlreadyExecuted++;
@@ -60,13 +65,12 @@ void calculateTask() {
     RES_PER_ITERATION += local_res;
     pthread_mutex_unlock(&mutexTasksInRemain);
 }
+
 void *receiverThreadGo(void *args) {
   int tasksToSend;
   int rankRequestedTasks;
 
   while (1) {
-
-    // Получение запроса на задачи от любого процесса
     MPI_Recv(&rankRequestedTasks, 1, MPI_INT, MPI_ANY_SOURCE, TAG_REQUEST,
              MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -91,8 +95,8 @@ void *receiverThreadGo(void *args) {
       tasksToSend = 0;
       MPI_Send(&tasksToSend, 1, MPI_INT, rankRequestedTasks, TAG_REPLY,
                MPI_COMM_WORLD);
+      pthread_mutex_unlock(&mutexTasksInRemain);
     }
-    pthread_mutex_unlock(&mutexTasksInRemain);
   }
   return NULL;
 }
@@ -110,14 +114,13 @@ void *workerThreadGo(void *args) {
     tasksInRemain = TASKS_PER_PROCESS;
     pthread_mutex_unlock(&mutexTasksInRemain);
     amountOfTasksAlreadyExecuted = 0;
+    activeTime = 0;
     int amountOfAdditionalTasks;
 
     startTime = MPI_Wtime();
 
-    // Выполнение задач из своего списка
     calculateTask();
 
-    // Запрос задач у других процессов, если свои задачи выполнены
     for (int currentProc = 0; currentProc < countProc; ++currentProc) {
       if (currentProc == rankProc)
         continue;
@@ -133,7 +136,6 @@ void *workerThreadGo(void *args) {
         tasksInRemain = amountOfAdditionalTasks;
         pthread_mutex_unlock(&mutexTasksInRemain);
 
-        // Дополнительное выполнение задач, полученных от других процессов
         calculateTask();
       }
     }
@@ -144,6 +146,9 @@ void *workerThreadGo(void *args) {
     MPI_Allreduce(&resTime, &minTime, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&resTime, &maxTime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
+    int totalExecuted;
+    MPI_Reduce(&amountOfTasksAlreadyExecuted, &totalExecuted, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
     if (rankProc == 0) {
       printf("=================================================\n");
       printf("Iteration number: %d\n", iterCounter);
@@ -151,6 +156,13 @@ void *workerThreadGo(void *args) {
       printf("Disbalance percentage: %f\n",
              (maxTime - minTime) / maxTime * 100);
       printf("----------------------------------------------\n");
+
+      int expectedTotal = TASKS_PER_PROCESS * countProc;
+      if (totalExecuted != expectedTotal) {
+        printf("ERROR: Not all tasks were executed! Expected %d, got %d\n", expectedTotal, totalExecuted);
+      } else {
+        printf("All tasks were successfully executed.\n");
+      }
     }
 
     for (int currentProc = 0; currentProc < countProc; ++currentProc) {
@@ -159,6 +171,8 @@ void *workerThreadGo(void *args) {
         printf("Amount of executed tasks: %d\n", amountOfTasksAlreadyExecuted);
         printf("Result of calculating is: %f\n", RES_PER_ITERATION);
         printf("Time per iteration: %f seconds\n", resTime);
+        printf("Active time: %f seconds\n", activeTime);
+        printf("Idle time percentage: %f%%\n", (1.0 - activeTime / resTime) * 100);
       }
       MPI_Barrier(MPI_COMM_WORLD);
     }
@@ -185,7 +199,6 @@ void createAndGoThreads() {
     abort();
   }
 
-  // Установим состояние отсоединения потока
   if (pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_JOINABLE) != 0) {
     MPI_Finalize();
     perror("Error in setting attributes");
@@ -200,7 +213,7 @@ void createAndGoThreads() {
 
   pthread_attr_destroy(&attributes);
 
-  workerThreadGo(NULL); // В основном потоке
+  workerThreadGo(NULL);
   pthread_join(recvThread, NULL);
 
   pthread_mutex_destroy(&mutexTasks);
@@ -208,9 +221,8 @@ void createAndGoThreads() {
 }
 
 int main(int argc, char **argv) {
-  int reqiredLevel =
-      MPI_THREAD_MULTIPLE; // Мы хотим этот уровень поддержки многопоточности
-  int providedLevel; // Фактический уровень поддержки многопоточности
+  int reqiredLevel = MPI_THREAD_MULTIPLE;
+  int providedLevel;
 
   MPI_Init_thread(&argc, &argv, reqiredLevel, &providedLevel);
   if (providedLevel != reqiredLevel) {
@@ -231,8 +243,10 @@ int main(int argc, char **argv) {
   if (rankProc == 0) {
     printf("=======================================\n");
     printf("Time for all lists: %f seconds\n", resTime);
+    printf("Final result of all sin sums: %f\n", GLOBAL_RESULT_SIN);
   }
 
   MPI_Finalize();
   return 0;
 }
+
