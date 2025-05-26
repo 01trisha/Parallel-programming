@@ -27,7 +27,6 @@
 #define H_Y_2 (H_Y * H_Y)
 #define H_Z_2 (H_Z * H_Z)
 
-// Parameters
 #define A (double)1.0E5
 #define EPSILON (double)1.0E-4
 
@@ -108,7 +107,7 @@ double CalcCenter(const double *prevFunc, double *currFunc, int layerHeight,
     {
       for (int k = 1; k < N_Z - 1; ++k)
       {
-        //суммы соседей по всем 3 напр
+        // суммы соседей по всем 3 напр
         f_i = (prevFunc[GetIndex(i + 1, j, k)] +
                prevFunc[GetIndex(i - 1, j, k)]) /
               H_X_2;
@@ -195,7 +194,7 @@ double CalcLimit(const double *prevFunc, double *currFunc,
 
   return maxDiff;
 }
-//доп оценка точности из лабы
+// доп оценка точности из лабы
 double CalcMaxDiff(const double *currFunc, int layerHeight, int offset)
 {
   double tmpMaxDelta = 0.0;
@@ -242,7 +241,6 @@ int main(int argc, char **argv)
   MPI_Request recvUpReq;
   MPI_Request recvDownReq;
 
-  // Check grid size
   if (N_X < 3 || N_Y < 3 || N_Z < 3)
   {
     fprintf(stderr, "Incorrect grid size\n");
