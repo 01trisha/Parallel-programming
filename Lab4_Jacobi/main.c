@@ -42,15 +42,12 @@ double GetY(int j) { return Y_0 + j * H_Y; }
 
 double GetZ(int k) { return Z_0 + k * H_Z; }
 
-void SplitAreaIntoLayers(int *layerHeights, int *offsets, int countProc)
-{
+void SplitAreaIntoLayers(int *layerHeights, int *offsets, int countProc) {
   int offset = 0;
-  for (int i = 0; i < countProc; ++i)
-  {
+  for (int i = 0; i < countProc; ++i) {
     layerHeights[i] = N_X / countProc;
 
-    if (i < N_X % countProc)
-    {
+    if (i < N_X % countProc) {
       layerHeights[i]++;
     }
 
@@ -60,24 +57,17 @@ void SplitAreaIntoLayers(int *layerHeights, int *offsets, int countProc)
 }
 
 void InitLayers(double *prevFunc, double *currFunc, int layerHeight,
-                int offset)
-{
-  for (int i = 0; i < layerHeight; ++i)
-  {
-    for (int j = 0; j < N_Y; j++)
-    {
-      for (int k = 0; k < N_Z; k++)
-      {
+                int offset) {
+  for (int i = 0; i < layerHeight; ++i) {
+    for (int j = 0; j < N_Y; j++) {
+      for (int k = 0; k < N_Z; k++) {
         bool isBorder = (offset + i == 0) || (j == 0) || (k == 0) ||
                         (offset + i == N_X - 1) || (j == N_Y - 1) ||
                         (k == N_Z - 1);
-        if (isBorder)
-        {
+        if (isBorder) {
           prevFunc[GetIndex(i, j, k)] = Phi(GetX(offset + i), GetY(j), GetZ(k));
           currFunc[GetIndex(i, j, k)] = Phi(GetX(offset + i), GetY(j), GetZ(k));
-        }
-        else
-        {
+        } else {
           prevFunc[GetIndex(i, j, k)] = 0;
           currFunc[GetIndex(i, j, k)] = 0;
         }
@@ -86,27 +76,22 @@ void InitLayers(double *prevFunc, double *currFunc, int layerHeight,
   }
 }
 
-void SwapFunc(double **prevFunc, double **currFunc)
-{
+void SwapFunc(double **prevFunc, double **currFunc) {
   double *tmp = *prevFunc;
   *prevFunc = *currFunc;
   *currFunc = tmp;
 }
 double CalcCenter(const double *prevFunc, double *currFunc, int layerHeight,
-                  int offset)
-{
+                  int offset) {
   double f_i = 0.0;
   double f_j = 0.0;
   double f_k = 0.0;
   double tmpMaxDiff = 0.0;
   double maxDiff = 0.0;
 
-  for (int i = 1; i < layerHeight - 1; ++i)
-  {
-    for (int j = 1; j < N_Y - 1; ++j)
-    {
-      for (int k = 1; k < N_Z - 1; ++k)
-      {
+  for (int i = 1; i < layerHeight - 1; ++i) {
+    for (int j = 1; j < N_Y - 1; ++j) {
+      for (int k = 1; k < N_Z - 1; ++k) {
         // суммы соседей по всем 3 напр
         f_i = (prevFunc[GetIndex(i + 1, j, k)] +
                prevFunc[GetIndex(i - 1, j, k)]) /
@@ -134,20 +119,16 @@ double CalcCenter(const double *prevFunc, double *currFunc, int layerHeight,
 }
 double CalcLimit(const double *prevFunc, double *currFunc,
                  const double *upLimitLayer, const double *downLimitLayer,
-                 int layerHeight, int offset, int rankProc, int countProc)
-{
+                 int layerHeight, int offset, int rankProc, int countProc) {
   double f_i = 0.0;
   double f_j = 0.0;
   double f_k = 0.0;
   double tmpMaxDiff = 0.0;
   double maxDiff = 0.0;
 
-  for (int j = 1; j < N_Y - 1; ++j)
-  {
-    for (int k = 1; k < N_Z - 1; ++k)
-    {
-      if (rankProc != 0)
-      {
+  for (int j = 1; j < N_Y - 1; ++j) {
+    for (int k = 1; k < N_Z - 1; ++k) {
+      if (rankProc != 0) {
         f_i = (prevFunc[GetIndex(1, j, k)] + upLimitLayer[GetIndex(0, j, k)]) /
               H_X_2;
         f_j = (prevFunc[GetIndex(0, j + 1, k)] +
@@ -167,8 +148,7 @@ double CalcLimit(const double *prevFunc, double *currFunc,
           maxDiff = tmpMaxDiff;
       }
 
-      if (rankProc != countProc - 1)
-      {
+      if (rankProc != countProc - 1) {
         f_i = (prevFunc[GetIndex(layerHeight - 2, j, k)] +
                downLimitLayer[GetIndex(0, j, k)]) /
               H_X_2;
@@ -195,22 +175,17 @@ double CalcLimit(const double *prevFunc, double *currFunc,
   return maxDiff;
 }
 // доп оценка точности из лабы
-double CalcMaxDiff(const double *currFunc, int layerHeight, int offset)
-{
+double CalcMaxDiff(const double *currFunc, int layerHeight, int offset) {
   double tmpMaxDelta = 0.0;
   double maxProcDelta = 0.0;
   double maxDelta = 0.0;
 
-  for (int i = 0; i < layerHeight; ++i)
-  {
-    for (int j = 0; j < N_Y; ++j)
-    {
-      for (int k = 0; k < N_Z; ++k)
-      {
+  for (int i = 0; i < layerHeight; ++i) {
+    for (int j = 0; j < N_Y; ++j) {
+      for (int k = 0; k < N_Z; ++k) {
         tmpMaxDelta = fabs(currFunc[GetIndex(i, j, k)] -
                            Phi(GetX(offset + i), GetY(j), GetZ(k)));
-        if (tmpMaxDelta > maxProcDelta)
-        {
+        if (tmpMaxDelta > maxProcDelta) {
           maxProcDelta = tmpMaxDelta;
         }
       }
@@ -223,8 +198,7 @@ double CalcMaxDiff(const double *currFunc, int layerHeight, int offset)
   return maxDelta;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   int rankProc = 0;
   int countProc = 0;
   double startTime = 0.0;
@@ -241,8 +215,7 @@ int main(int argc, char **argv)
   MPI_Request recvUpReq;
   MPI_Request recvDownReq;
 
-  if (N_X < 3 || N_Y < 3 || N_Z < 3)
-  {
+  if (N_X < 3 || N_Y < 3 || N_Z < 3) {
     fprintf(stderr, "Incorrect grid size\n");
     return EXIT_FAILURE;
   }
@@ -268,15 +241,13 @@ int main(int argc, char **argv)
              N_Z); // верхний слой след процесса для расчета нижней границы
 
   startTime = MPI_Wtime();
-  do
-  {
+  do {
     double tmpMaxDiff = 0.0;
     double procMaxDiff = 0.0;
 
     SwapFunc(&prevFunc, &currFunc);
 
-    if (rankProc != 0)
-    {
+    if (rankProc != 0) {
       double *prevUpLimit =
           prevFunc; // верх слой текущего процесса отправляемый пред процессу
       MPI_Isend(prevUpLimit, N_Y * N_Z, MPI_DOUBLE, rankProc - 1, rankProc,
@@ -284,8 +255,7 @@ int main(int argc, char **argv)
       MPI_Irecv(upLimitLayer, N_Y * N_Z, MPI_DOUBLE, rankProc - 1, rankProc - 1,
                 MPI_COMM_WORLD, &recvUpReq);
     }
-    if (rankProc != countProc - 1)
-    {
+    if (rankProc != countProc - 1) {
       double *prevDownLimit =
           prevFunc +
           (layerHeights[rankProc] - 1) * N_Y *
@@ -299,14 +269,12 @@ int main(int argc, char **argv)
     tmpMaxDiff = CalcCenter(prevFunc, currFunc, layerHeights[rankProc],
                             offsets[rankProc]);
 
-    if (rankProc != 0)
-    {
+    if (rankProc != 0) {
       MPI_Wait(&sendUpReq, MPI_STATUS_IGNORE);
       MPI_Wait(&recvUpReq, MPI_STATUS_IGNORE);
     }
 
-    if (rankProc != countProc - 1)
-    {
+    if (rankProc != countProc - 1) {
       MPI_Wait(&sendDownReq, MPI_STATUS_IGNORE);
       MPI_Wait(&recvDownReq, MPI_STATUS_IGNORE);
     }
@@ -324,8 +292,7 @@ int main(int argc, char **argv)
 
   finishTime = MPI_Wtime();
 
-  if (rankProc == 0)
-  {
+  if (rankProc == 0) {
     printf("Time: %lf\n", finishTime - startTime);
     printf("Max difference: %lf\n", maxDiff);
   }
